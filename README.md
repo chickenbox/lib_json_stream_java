@@ -27,6 +27,8 @@ Convert json object to byte array. Reduce the size of converted array by reducin
 
 ## Release History
 
+* 1.0.1
+    * Update Classes 
 * 1.0.0
     * First Release
 

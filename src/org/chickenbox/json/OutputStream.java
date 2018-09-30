@@ -13,14 +13,24 @@ public class OutputStream {
 	private Vector<String> propertyNames = new Vector<>();
 	private HashMap<String, Integer> propertyIndexLookup = new HashMap<>();
 	
+	private ByteArrayOutputStream outBuf = new ByteArrayOutputStream();
+	private final DataOutputStream output;
 	private final String stringEncoding;
 	
-	OutputStream(){
+	OutputStream( java.io.OutputStream outStream ){
+		this.output = new DataOutputStream(outStream);
 		this.stringEncoding = "utf-8";
 	}
 	
-	OutputStream( String stringEncoding){
+	OutputStream( java.io.OutputStream outStream, String stringEncoding){
+		this.output = new DataOutputStream(outStream);
 		this.stringEncoding = stringEncoding;
+	}
+	
+	protected void finalize() throws Throwable{
+		this.outBuf.close();
+		this.output.close();
+		super.finalize();
 	}
 	
 
@@ -119,31 +129,22 @@ public class OutputStream {
 		}
 	}	
 	
-	public byte[] write( Object json ) throws IOException {
+	public void write( Object json ) throws IOException {
 		int startIndex = this.propertyNames.size();
-		ByteArrayOutputStream outBuf = new ByteArrayOutputStream();
-		DataOutputStream outBufWriter = new DataOutputStream(outBuf);
-		
+		DataOutputStream outBufWriter = new DataOutputStream(outBuf);		
       	_write(json, outBufWriter);
       	
       	outBufWriter.close();
-      	outBuf.close();
   	
-      	ByteArrayOutputStream headerOutBuf = new ByteArrayOutputStream();
-      	DataOutputStream headerWriter = new DataOutputStream(headerOutBuf);
-      	headerWriter.writeShort(propertyNames.size()-startIndex);
+      	this.output.writeShort(propertyNames.size()-startIndex);
       	for( int i=startIndex; i<propertyNames.size(); i++ ) {
       		String s = propertyNames.get(i);
 			byte [] b = s.getBytes(this.stringEncoding);
-			headerWriter.writeByte(b.length);
-			headerWriter.write(b);
+			this.output.writeByte(b.length);
+			this.output.write(b);
       	}
       	
-      	headerWriter.write(outBuf.toByteArray());
-      	
-      	headerWriter.close();
-      	headerOutBuf.close();
-  
-  		return headerOutBuf.toByteArray();
+      	this.output.write(outBuf.toByteArray());
+		outBuf.reset();
 	}
 }

@@ -11,14 +11,23 @@ import org.json.JSONObject;
 public class InputStream {
 	private Vector<String> decodePropertyNames = new Vector<>();
 	
+	private final DataInputStream input;
+	
 	private final String stringEncoding;
 	
-	InputStream(){
+	InputStream( java.io.InputStream inputStream ){
+		this.input = new DataInputStream(inputStream);
 		this.stringEncoding = "utf-8";
 	}
 	
-	InputStream( String stringEncoding){
+	InputStream(  java.io.InputStream inputStream, String stringEncoding){
+		this.input = new DataInputStream(inputStream);
 		this.stringEncoding = stringEncoding;
+	}
+	
+	protected void finalize() throws Throwable {
+		this.input.close();
+		super.finalize();
 	}
 	
 	private int toInt( Object json ) {
@@ -38,7 +47,7 @@ public class InputStream {
 		return 0;
 	}	
 
-	private Object _decode( DataInputStream input ) throws IOException {
+	private Object _read() throws IOException {
 		DataType type = DataType.values()[input.readByte()];
 		switch (type) {
 		case _byte:
@@ -61,19 +70,19 @@ public class InputStream {
 		case array:
 		{
 			JSONArray a = new JSONArray();
-			int len = toInt(_decode(input));
+			int len = toInt(_read());
 			for( int i=0; i<len; i++ ) {
-				a.put(_decode(input));
+				a.put(_read());
 			}
 			return a;
 		}
 		case object:
 		{
 			JSONObject obj = new JSONObject();
-			int len = toInt(_decode(input));
+			int len = toInt(_read());
 			for( int i=0; i<len; i++ ) {
-				String key = decodePropertyNames.get(toInt(_decode(input)));
-				obj.put(key, _decode(input));
+				String key = decodePropertyNames.get(toInt(_read()));
+				obj.put(key, _read());
 			}
 			return obj;
 		}
@@ -84,10 +93,7 @@ public class InputStream {
 		return null;
 	} 
 	
-	public Object decode( byte [] bytes ) throws IOException {
-		ByteArrayInputStream byteInput = new ByteArrayInputStream(bytes);
-		DataInputStream input = new DataInputStream(byteInput);
-		
+	public Object read() throws IOException {
 		int numKey = input.readShort();
 		for( int i=0; i<numKey; i++ ) {
 			int strLen = input.readByte();
@@ -96,11 +102,7 @@ public class InputStream {
 			String s = new String(buf,this.stringEncoding);
 			decodePropertyNames.add( s );
 		}
-		Object o = _decode( input );
-		
-		input.close();
-		byteInput.close();
-		
+		Object o = _read();
 		return o;
 	}
 }
