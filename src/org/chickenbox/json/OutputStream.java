@@ -1,4 +1,4 @@
-package org.chox.json;
+package org.chickenbox.json;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;

@@ -1,4 +1,4 @@
-package org.chox.json;
+package org.chickenbox.json;
 
 public enum DataType {
 	_byte,
